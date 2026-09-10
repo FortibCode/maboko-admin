@@ -1,0 +1,560 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Échelle d'élévation — ombres teintées brun plutôt que noires, pour
+       rester dans la chaleur de la charte au lieu de grisailler les cartes. */
+    --ombre-1: 0 1px 2px rgba(74, 42, 24, 0.05), 0 2px 8px rgba(74, 42, 24, 0.03);
+    --ombre-2: 0 2px 4px rgba(74, 42, 24, 0.06), 0 8px 20px rgba(74, 42, 24, 0.05);
+    --ombre-3: 0 4px 10px rgba(74, 42, 24, 0.08), 0 16px 36px rgba(74, 42, 24, 0.08);
+    --ombre-4: 0 8px 20px rgba(74, 42, 24, 0.12), 0 30px 60px rgba(74, 42, 24, 0.12);
+    --lueur-accent: 0 8px 28px -8px rgba(234, 160, 35, 0.55);
+    --lueur-secondaire: 0 8px 28px -8px rgba(179, 91, 40, 0.5);
+    --transition-douce: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    @apply bg-maboko-fond text-maboko-principale antialiased;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
+  /* Anneau de focus homogène : visible au clavier, invisible à la souris. */
+  :focus-visible {
+    outline: 2px solid theme('colors.maboko.secondaire');
+    outline-offset: 2px;
+    border-radius: 6px;
+  }
+
+  /* Le mouvement est un confort, pas une condition d'usage : si le système
+     demande moins d'animation, tout se fige sans casser la mise en page. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply rounded-full bg-maboko-bordure;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-maboko-texte;
+  }
+}
+
+@layer components {
+  /* ========================================================
+     CARTES / PANNEAUX
+  ======================================================== */
+  .carte {
+    @apply relative rounded-2xl border border-maboko-bordure/60 p-5;
+    /* Dégradé très léger : la carte capte la lumière par le haut, ce qui la
+       détache du fond crème mieux qu'un blanc plat. */
+    background: linear-gradient(180deg, #ffffff 0%, #fffdf9 100%);
+    box-shadow: var(--ombre-1);
+    transition: box-shadow 0.35s var(--transition-douce),
+                transform 0.35s var(--transition-douce),
+                border-color 0.35s ease;
+  }
+
+  .carte-hover {
+    @apply carte;
+    cursor: pointer;
+  }
+
+  .carte-hover:hover {
+    box-shadow: var(--ombre-3);
+    transform: translateY(-3px);
+    @apply border-maboko-secondaire/25;
+  }
+
+  .carte-hover:active {
+    transform: translateY(-1px);
+  }
+
+  /* Carte KPI héro (fond marron foncé) */
+  .carte-hero {
+    @apply rounded-2xl p-5 text-white relative overflow-hidden;
+    background:
+      radial-gradient(120% 120% at 85% 0%, rgba(234, 160, 35, 0.28) 0%, transparent 55%),
+      linear-gradient(145deg, #5A3520 0%, #3A2112 45%, #24140B 100%);
+    box-shadow: var(--ombre-4);
+    transition: box-shadow 0.35s var(--transition-douce),
+                transform 0.35s var(--transition-douce);
+  }
+  .carte-hero:hover {
+    box-shadow: var(--ombre-4), var(--lueur-secondaire);
+    transform: translateY(-3px);
+  }
+  /* Halo mobile : suit lentement la carte pour lui donner de la matière. */
+  .carte-hero::before {
+    content: '';
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(234, 160, 35, 0.35) 0%, transparent 70%);
+    animation: derive 9s ease-in-out infinite;
+  }
+  .carte-hero::after {
+    content: '';
+    position: absolute;
+    bottom: -30px;
+    left: -20px;
+    width: 110px;
+    height: 110px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(179, 91, 40, 0.4) 0%, transparent 70%);
+    animation: derive 11s ease-in-out infinite reverse;
+  }
+  /* Liseré lumineux sur l'arête haute, comme un reflet. */
+  .carte-hero > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .carte-stat {
+    @apply carte overflow-hidden;
+  }
+
+  /* Filet de couleur qui se déploie sur l'arête haute au survol. */
+  .carte-stat::after {
+    content: '';
+    position: absolute;
+    inset: 0 auto auto 0;
+    height: 3px;
+    width: 100%;
+    transform: scaleX(0);
+    transform-origin: left;
+    background: linear-gradient(90deg, theme('colors.maboko.secondaire'), theme('colors.maboko.accent'));
+    transition: transform 0.45s var(--transition-douce);
+  }
+
+  .carte-stat:hover::after {
+    transform: scaleX(1);
+  }
+
+
+  /* ========================================================
+     BOUTONS
+  ======================================================== */
+  .bouton {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5
+           text-sm font-semibold transition-all duration-200
+           disabled:cursor-not-allowed disabled:opacity-50 select-none;
+  }
+
+  .bouton-principal {
+    @apply bouton bg-maboko-principale text-white
+           hover:bg-maboko-principale/90 active:scale-[0.98]
+           shadow-[0_2px_8px_rgba(74,42,24,0.25)];
+  }
+
+  .bouton-accent {
+    @apply bouton bg-maboko-secondaire text-white
+           hover:bg-maboko-secondaire/90 active:scale-[0.98]
+           shadow-[0_2px_8px_rgba(179,91,40,0.25)];
+  }
+
+  .bouton-secondaire {
+    @apply bouton border border-maboko-bordure bg-white text-maboko-principale
+           hover:bg-maboko-fond hover:border-maboko-secondaire active:scale-[0.98];
+  }
+
+  .bouton-danger {
+    @apply bouton border border-red-200 bg-red-50 text-maboko-danger
+           hover:bg-red-100 hover:border-red-300 active:scale-[0.98];
+  }
+
+  .bouton-succes {
+    @apply bouton border border-green-200 bg-green-50 text-maboko-succes
+           hover:bg-green-100 active:scale-[0.98];
+  }
+
+  /* Boutons d'action des tableaux.
+     Au repos ils restent discrets pour ne pas mitrailler la liste de couleur ;
+     au survol ils se remplissent franchement, pour que la cible et sa nature
+     (valider / refuser) ne fassent aucun doute avant le clic. */
+  .bouton-icon,
+  .bouton-icon-danger,
+  .bouton-icon-succes {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border
+           disabled:pointer-events-none disabled:opacity-40;
+    transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease,
+                transform 0.2s var(--transition-douce), box-shadow 0.2s ease;
+  }
+
+  .bouton-icon:hover,
+  .bouton-icon-danger:hover,
+  .bouton-icon-succes:hover {
+    transform: translateY(-1px);
+  }
+
+  .bouton-icon:active,
+  .bouton-icon-danger:active,
+  .bouton-icon-succes:active {
+    transform: translateY(0) scale(0.95);
+  }
+
+  .bouton-icon {
+    @apply border-maboko-bordure bg-white text-maboko-texte
+           hover:border-maboko-principale hover:bg-maboko-principale hover:text-white;
+  }
+  .bouton-icon:hover {
+    box-shadow: 0 5px 14px -5px rgba(74, 42, 24, 0.5);
+  }
+
+  .bouton-icon-danger {
+    @apply border-rose-200 bg-rose-50 text-maboko-danger
+           hover:border-transparent hover:bg-maboko-danger hover:text-white;
+  }
+  .bouton-icon-danger:hover {
+    box-shadow: 0 5px 14px -5px rgba(158, 43, 34, 0.6);
+  }
+
+  .bouton-icon-succes {
+    @apply border-emerald-200 bg-emerald-50 text-maboko-succes
+           hover:border-transparent hover:bg-maboko-succes hover:text-white;
+  }
+  .bouton-icon-succes:hover {
+    box-shadow: 0 5px 14px -5px rgba(95, 117, 72, 0.6);
+  }
+
+  /* Bouton icône arrondi plein (style flèche de la maquette) */
+  .bouton-fleche {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-full
+           border border-maboko-bordure bg-white text-maboko-principale
+           hover:bg-maboko-principale hover:text-white hover:border-transparent
+           transition-all duration-200 active:scale-[0.95];
+  }
+
+  /* ========================================================
+     CHAMPS DE FORMULAIRE
+  ======================================================== */
+  .champ {
+    @apply w-full rounded-xl border border-maboko-bordure bg-white px-3.5 py-2.5
+           text-sm outline-none transition-all duration-200
+           focus:border-maboko-secondaire focus:ring-2 focus:ring-maboko-secondaire/10
+           placeholder:text-maboko-texte/50;
+  }
+
+  .champ-select {
+    @apply champ appearance-none cursor-pointer;
+  }
+
+  /* ========================================================
+     PASTILLES / BADGES
+  ======================================================== */
+  .pastille {
+    @apply inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1
+           text-[11.5px] font-bold leading-none;
+  }
+
+  /* Point de couleur en tête de pastille : le statut se lit à la forme même
+     quand la teinte passe mal (impression, daltonisme, écran fatigué). */
+  .pastille::before {
+    content: '';
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: currentColor;
+    flex: none;
+  }
+
+  /* Les pastilles construites à la main dans les pages portent déjà leur
+     propre contenu en tête : on n'y ajoute pas de point. */
+  .pastille-sans-point::before {
+    display: none;
+  }
+
+  .pastille-actif {
+    @apply pastille border-emerald-200 bg-emerald-50 text-emerald-700;
+  }
+
+  .pastille-suspendu {
+    @apply pastille border-rose-200 bg-rose-50 text-rose-700;
+  }
+
+  .pastille-attente {
+    @apply pastille border-amber-200 bg-amber-50 text-amber-700;
+  }
+
+  .pastille-info {
+    @apply pastille border-blue-200 bg-blue-50 text-blue-700;
+  }
+
+  .pastille-neutre {
+    @apply pastille border-maboko-bordure bg-maboko-fond text-maboko-texte;
+  }
+
+  /* ========================================================
+     NAVIGATION SIDEBAR — Style "barre verticale"
+  ======================================================== */
+  .nav-lien {
+    @apply relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium
+           text-maboko-texte transition-all duration-200
+           hover:bg-maboko-fond hover:text-maboko-principale;
+  }
+
+  .nav-lien-actif {
+    @apply relative flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-bold
+           text-maboko-principale bg-maboko-fond;
+  }
+  /* Barre verticale de l'élément actif */
+  .nav-lien-actif::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-5 rounded-full bg-maboko-principale;
+  }
+
+  .nav-groupe-titre {
+    @apply flex items-center justify-between w-full gap-3 rounded-xl px-3.5 py-2.5
+           text-sm font-semibold text-maboko-principale
+           transition-all duration-200 cursor-pointer
+           hover:bg-maboko-fond;
+  }
+
+  .nav-sous-lien {
+    @apply flex items-center gap-3 rounded-xl pl-10 pr-3.5 py-2 text-sm font-medium
+           text-maboko-texte transition-all duration-200
+           hover:bg-maboko-fond hover:text-maboko-principale;
+  }
+
+  .nav-sous-lien-actif {
+    @apply relative flex items-center gap-3 rounded-xl pl-10 pr-3.5 py-2 text-sm font-bold
+           text-maboko-principale bg-maboko-fond;
+  }
+  .nav-sous-lien-actif::before {
+    content: '';
+    @apply absolute left-0 top-1/2 -translate-y-1/2 w-1 h-4 rounded-full bg-maboko-secondaire;
+  }
+
+  /* ========================================================
+     TABLEAUX
+  ======================================================== */
+  .tableau-conteneur {
+    @apply rounded-2xl border border-maboko-bordure bg-white overflow-hidden;
+    box-shadow: var(--ombre-2);
+  }
+
+  /* Le filet bas est plus épais que les séparateurs de lignes, pour que l'œil
+     distingue « la légende » de « les données ».
+     Pas de `sticky` ici : le conteneur porte `overflow`, ce qui l'enferme dans
+     un contexte de défilement qui ne défile pas — l'en-tête n'adhérerait à
+     rien. Les listes sont paginées, la question ne se pose pas. */
+  .tableau-entete {
+    background: linear-gradient(180deg, #FCF7EC 0%, #F5EDDD 100%);
+    box-shadow: inset 0 -1.5px 0 theme('colors.maboko.bordure');
+  }
+
+  .tableau-th {
+    @apply px-5 py-4 text-left text-[11px] font-extrabold uppercase tracking-[0.1em];
+    color: rgba(74, 42, 24, 0.62);
+  }
+
+  .tableau-tr {
+    @apply relative border-b border-maboko-bordure/50 last:border-0;
+    transition: background-color 0.22s ease, box-shadow 0.22s ease;
+  }
+
+  .tableau-tr:hover {
+    @apply bg-maboko-fond/60;
+    box-shadow: inset 3px 0 0 theme('colors.maboko.secondaire');
+  }
+
+  .tableau-td {
+    @apply px-5 py-4 align-middle text-sm text-maboko-principale;
+  }
+
+  /* ── Hiérarchie interne des cellules ──
+     Sans ces trois niveaux, nom, téléphone et date d'inscription s'affichaient
+     avec un poids presque identique : la cellule devenait un bloc de texte
+     illisible au lieu d'une fiche qui se parcourt en diagonale. */
+  .cellule-titre {
+    @apply text-[14px] font-bold leading-tight text-maboko-principale;
+  }
+
+  .cellule-sous {
+    @apply text-[12.5px] leading-tight text-maboko-texte;
+  }
+
+  .cellule-meta {
+    @apply text-[11px] leading-tight text-maboko-texte/70;
+  }
+
+  .cellule-nombre {
+    @apply text-[15px] font-bold tabular-nums text-maboko-principale;
+  }
+
+  .cellule-code {
+    @apply font-mono text-[11.5px] font-semibold tracking-tight text-maboko-principale/80;
+  }
+
+
+  /* ========================================================
+     PAGINATION
+  ======================================================== */
+  .pagination-btn {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border
+           border-maboko-bordure bg-white text-sm font-semibold text-maboko-texte
+           transition-all duration-200
+           hover:border-maboko-secondaire/50 hover:bg-maboko-fond hover:text-maboko-principale
+           disabled:cursor-not-allowed disabled:opacity-35 disabled:hover:border-maboko-bordure
+           disabled:hover:bg-white;
+  }
+
+  .pagination-btn-actif {
+    @apply inline-flex h-9 w-9 items-center justify-center rounded-xl border border-transparent
+           text-sm font-bold text-white;
+    background: linear-gradient(100deg, #B35B28 0%, #8E4520 100%);
+    box-shadow: 0 4px 14px -5px rgba(179, 91, 40, 0.65);
+  }
+
+  /* ========================================================
+     CONFIRMATIONS / MODALES
+  ======================================================== */
+  .modal-overlay {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+    background: rgba(74, 42, 24, 0.35);
+    backdrop-filter: blur(6px);
+  }
+
+  .modal-contenu {
+    @apply bg-white rounded-2xl w-full max-w-md p-6;
+    box-shadow: 0 30px 60px rgba(74, 42, 24, 0.15), 0 8px 24px rgba(74, 42, 24, 0.1);
+  }
+
+  /* ========================================================
+     ANIMATIONS
+  ======================================================== */
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(20px) scale(0.97); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+
+  .animate-pulse-dot {
+    animation: pulse-dot 1.5s ease-in-out infinite;
+  }
+
+  /* Dérive lente des halos décoratifs. */
+  @keyframes derive {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-14px, 12px) scale(1.12); }
+  }
+
+  /* Onde de lumière traversant un bloc en cours de chargement. */
+  @keyframes miroitement {
+    100% { transform: translateX(100%); }
+  }
+
+  .squelette {
+    @apply relative overflow-hidden rounded-xl bg-maboko-bordure/40;
+  }
+
+  .squelette::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(
+      90deg,
+      transparent 0%,
+      rgba(255, 255, 255, 0.65) 50%,
+      transparent 100%
+    );
+    animation: miroitement 1.4s infinite;
+  }
+
+  /* Halo pulsé, pour les pastilles « en direct ». */
+  @keyframes halo {
+    0% { box-shadow: 0 0 0 0 rgba(95, 117, 72, 0.5); }
+    70% { box-shadow: 0 0 0 7px rgba(95, 117, 72, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(95, 117, 72, 0); }
+  }
+
+  .point-direct {
+    animation: halo 2s ease-out infinite;
+  }
+
+  /* Animations d'entrée ligne par ligne des tableaux */
+  @keyframes row-in {
+    from { opacity: 0; transform: translateY(6px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .tableau-tr {
+    animation: row-in 0.34s var(--transition-douce) both;
+  }
+  .tableau-tr:nth-child(1) { animation-delay: 0.02s; }
+  .tableau-tr:nth-child(2) { animation-delay: 0.05s; }
+  .tableau-tr:nth-child(3) { animation-delay: 0.08s; }
+  .tableau-tr:nth-child(4) { animation-delay: 0.11s; }
+  .tableau-tr:nth-child(5) { animation-delay: 0.14s; }
+  .tableau-tr:nth-child(6) { animation-delay: 0.17s; }
+  .tableau-tr:nth-child(7) { animation-delay: 0.20s; }
+  .tableau-tr:nth-child(8) { animation-delay: 0.23s; }
+
+  /* ========================================================
+     UTILITAIRES
+  ======================================================== */
+  .section-titre {
+    @apply text-xs font-semibold uppercase tracking-widest text-maboko-texte mb-4;
+  }
+
+  .label {
+    @apply block text-sm font-medium text-maboko-principale mb-1.5;
+  }
+
+  .divider {
+    @apply border-t border-maboko-bordure/60 my-5;
+  }
+
+  /* Le médaillon ancre la ligne : sans dégradé ni anneau, il se fondait dans
+     le fond blanc et la ligne perdait son point de départ visuel. */
+  .avatar {
+    @apply inline-flex shrink-0 items-center justify-center rounded-full font-extrabold
+           text-maboko-secondaire ring-2 ring-white;
+    background: linear-gradient(135deg, rgba(179, 91, 40, 0.18) 0%, rgba(234, 160, 35, 0.26) 100%);
+    box-shadow: 0 2px 6px rgba(74, 42, 24, 0.12);
+    letter-spacing: 0.02em;
+  }
+
+  /* Numéro de badge rouge */
+  .badge-rouge {
+    @apply inline-flex items-center justify-center min-w-[20px] h-5 rounded-full
+           bg-maboko-danger text-white text-[10px] font-bold px-1;
+  }
+}
