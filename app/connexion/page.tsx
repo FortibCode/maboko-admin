@@ -66,7 +66,18 @@ function FormulaireConnexion() {
       ecrireJeton(reponse.token);
       router.push(parametres.get('retour') ?? '/');
     } catch (e) {
-      setErreur(e instanceof ApiError ? e.message : 'Connexion impossible. Vérifiez vos identifiants.');
+      // Le client convertit deja tout echec reseau ou HTTP en ApiError, avec
+      // le message du serveur. Ce qui arrive ici est donc autre chose — et
+      // accuser les identifiants, comme le faisait le message precedent,
+      // envoyait chercher le probleme la ou il n'etait pas.
+      if (e instanceof ApiError) {
+        setErreur(e.message);
+      } else {
+        const detail = e instanceof Error ? e.message : String(e);
+        setErreur(`Erreur inattendue pendant la connexion : ${detail}`);
+        console.error('[connexion] echec inattendu', e);
+      }
+
       setEnCours(false);
     }
   };
