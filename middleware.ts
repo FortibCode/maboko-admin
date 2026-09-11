@@ -38,6 +38,13 @@ export function middleware(requete: NextRequest) {
 }
 
 export const config = {
-  // Tout sauf les ressources statiques et les icônes servies par Next.
-  matcher: ['/((?!_next/static|_next/image|icon|apple-icon|favicon).*)'],
+  /*
+   * Les pages, et rien d'autre.
+   *
+   * Un filtre trop large interceptait aussi les fichiers de `public/` : le
+   * logo `/maboko-logo.jpg` repartait en redirection vers l'écran de
+   * connexion, et l'image ne s'affichait plus. Tout chemin portant une
+   * extension est donc laissé tranquille, ainsi que les ressources de Next.
+   */
+  matcher: ['/((?!_next/|.*\\.[^/]+$).*)'],
 };
