@@ -6,7 +6,10 @@
  * l'intergiciel Next peut ainsi protéger les routes avant même le rendu.
  */
 
-const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8000/api/v1';
+// Adresse de l'API en ligne. Elle sert de valeur par defaut : un back-office
+// publie sans configuration parle donc au bon serveur. Pour travailler contre
+// un backend local, posez NEXT_PUBLIC_API_URL dans un fichier .env.local.
+const BASE = process.env.NEXT_PUBLIC_API_URL ?? 'https://maboko-api.onrender.com/api/v1';
 
 const COOKIE_JETON = 'maboko_admin_token';
 
