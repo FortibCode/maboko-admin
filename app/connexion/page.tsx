@@ -1,7 +1,8 @@
 'use client';
 
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useState } from 'react';
 import { api, ApiError, ecrireJeton } from '@/lib/api';
 import {
@@ -25,14 +26,25 @@ type Connexion = { token: string; user: { role: string; nom: string; prenom: str
  *
  * Refusée si le rôle n'est pas admin ou super_admin (vérifié côté API).
  */
-export default function PageConnexion() {
+function FormulaireConnexion() {
   const router = useRouter();
+  const parametres = useSearchParams();
   const [identifiant, setIdentifiant] = useState('');
   const [motDePasse, setMotDePasse] = useState('');
   const [afficherMDP, setAfficherMDP] = useState(false);
   const [erreur, setErreur] = useState<string>();
   const [enCours, setEnCours] = useState(false);
   const [aideMotDePasseOublie, setAideMotDePasseOublie] = useState(false);
+
+  // Motif transmis par la coquille quand elle a du ejecter la session :
+  // sans lui, on se retrouvait ici sans savoir ce qui venait de se passer.
+  const motif = parametres.get('motif');
+  const avertissement =
+    motif === 'droits'
+      ? "Ce compte n'a pas les droits d'administration."
+      : motif === 'session'
+        ? 'Votre session a expiré. Reconnectez-vous.'
+        : undefined;
 
   const soumettre = async (evenement: React.FormEvent) => {
     evenement.preventDefault();
@@ -52,7 +64,7 @@ export default function PageConnexion() {
       }
 
       ecrireJeton(reponse.token);
-      router.push('/');
+      router.push(parametres.get('retour') ?? '/');
     } catch (e) {
       setErreur(e instanceof ApiError ? e.message : 'Connexion impossible. Vérifiez vos identifiants.');
       setEnCours(false);
@@ -196,6 +208,16 @@ export default function PageConnexion() {
                 </p>
               )}
 
+              {/* Motif d'ejection, quand la session vient d'etre fermee */}
+              {!erreur && avertissement && (
+                <div className="flex items-start gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3">
+                  <span className="mt-0.5 shrink-0 text-amber-700">
+                    <IconeAlerte taille={16} />
+                  </span>
+                  <p className="text-sm text-amber-800">{avertissement}</p>
+                </div>
+              )}
+
               {/* Erreur */}
               {erreur && (
                 <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3">
@@ -253,5 +275,17 @@ export default function PageConnexion() {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * `useSearchParams` lit l'URL côté navigateur : Next exige une frontière
+ * Suspense pour pouvoir pré-générer la page malgré tout.
+ */
+export default function PageConnexion() {
+  return (
+    <Suspense fallback={null}>
+      <FormulaireConnexion />
+    </Suspense>
   );
 }
