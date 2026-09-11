@@ -6,22 +6,45 @@
  * l'intergiciel Next peut ainsi protéger les routes avant même le rendu.
  */
 
+/** Adresse visée quand rien n'est configuré. */
+const API_PAR_DEFAUT = 'https://maboko-api.onrender.com';
+
 /**
  * Adresse de l'API.
  *
  * `https://maboko-api.onrender.com` est l'adresse du serveur ; les routes,
- * elles, vivent sous `/api/v1` — c'est le prefixe declare dans
- * bootstrap/app.php et routes/api.php du backend. Donner l'une pour l'autre
- * produit un 404 sur chaque appel, sans rien qui explique pourquoi.
+ * elles, vivent sous `/api/v1` — le préfixe déclaré dans bootstrap/app.php et
+ * routes/api.php du backend. Donner l'une pour l'autre produit un 404 sur
+ * chaque appel ; le préfixe est donc ajouté ici quand il manque.
  *
- * Le prefixe est donc ajoute ici quand il manque, plutot que d'exiger qu'on
- * s'en souvienne a chaque fois qu'on renseigne l'adresse.
+ * Une variable déclarée mais vide était pire encore : `??` ne se déclenche que
+ * sur `undefined`, jamais sur une chaîne vide. L'adresse devenait `/api/v1`,
+ * relative, et le navigateur refusait de la construire — « Failed to construct
+ * URL ». Toute valeur inutilisable retombe donc sur l'adresse par défaut.
  */
 function adresseApi(): string {
-  const brute = (process.env.NEXT_PUBLIC_API_URL ?? 'https://maboko-api.onrender.com').trim();
-  const sansBarre = brute.replace(/\/+$/, '');
+  const brute = (process.env.NEXT_PUBLIC_API_URL ?? '').trim();
+  const racine = brute === '' ? API_PAR_DEFAUT : brute;
 
-  return /\/api\/v\d+$/.test(sansBarre) ? sansBarre : `${sansBarre}/api/v1`;
+  // Un hôte seul, sans protocole, ne se construit pas non plus.
+  const avecProtocole = /^https?:\/\//i.test(racine) ? racine : `https://${racine}`;
+  const sansBarre = avecProtocole.replace(/\/+$/, '');
+  const complete = /\/api\/v\d+$/.test(sansBarre) ? sansBarre : `${sansBarre}/api/v1`;
+
+  try {
+    new URL(complete);
+
+    return complete;
+  } catch {
+    // Plutôt qu'échouer sur chaque appel avec un message obscur, on revient
+    // à une adresse qui fonctionne et on le signale une fois.
+    console.error(
+      `[api] NEXT_PUBLIC_API_URL inutilisable (${JSON.stringify(brute)}), ` +
+        `retour sur ${API_PAR_DEFAUT}/api/v1`,
+    );
+
+    return `${API_PAR_DEFAUT}/api/v1`;
+  }
 }
 
 const BASE = adresseApi();
