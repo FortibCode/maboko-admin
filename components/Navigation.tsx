@@ -33,6 +33,8 @@ const ICONS: Record<string, React.ReactNode> = {
   verify: <SvgIcon><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></SvgIcon>,
   star: <SvgIcon><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></SvgIcon>,
   map: <SvgIcon><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></SvgIcon>,
+  // ⬇️ NOUVELLE ICÔNE — Musée (bâtiment avec fronton)
+  musee: <SvgIcon><path d="M3 21h18"/><path d="M3 10h18"/><path d="M5 6l7-3 7 3"/><path d="M4 10v11"/><path d="M20 10v11"/><path d="M8 14v3"/><path d="M12 14v3"/><path d="M16 14v3"/></SvgIcon>,
   logout: <SvgIcon><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></SvgIcon>,
 };
 
@@ -56,6 +58,8 @@ export const ENTREES_NAV: EntreeNav[] = [
       sousLiens: [
         { href: '/utilisateurs', libelle: 'Tous les comptes', iconeKey: 'users' },
         { href: '/artisans', libelle: 'Artisans', iconeKey: 'artisan', compteClef: 'artisansAValider' },
+        // ⬇️ AJOUTÉ — Musée du savoir-faire
+        { href: '/musee', libelle: 'Musée du savoir-faire', iconeKey: 'musee' },
         { href: '/chauffeurs', libelle: 'Chauffeurs', iconeKey: 'chauffeur', compteClef: 'chauffeursAValider' },
         { href: '/verifications', libelle: 'Vérifications ID', iconeKey: 'verify', compteClef: 'identitesAVerifier' },
       ],
@@ -125,8 +129,6 @@ export function Navigation({
   const [replie, setReplie] = useState(false);
 
   const basculerGroupe = (id: string) => {
-    // Replié, la liste des sous-liens n'a nulle part où s'afficher : on
-    // redéploie la barre avant d'ouvrir le groupe.
     if (replie) setReplie(false);
     setGroupesOuverts((p) => ({ ...p, [id]: !p[id] }));
   };
@@ -241,9 +243,6 @@ export function Navigation({
                 title={replie ? libelle : undefined}
                 className={`flex w-full items-center gap-2.5 border py-2.5 text-[10.5px] font-bold uppercase tracking-[0.05em] transition-all duration-200
                   ${replie ? 'justify-center px-0' : 'px-3'}
-                  ${/* Ouvert, l'en-tête perd ses coins bas et sa bordure basse :
-                       il se soude au panneau de sous-liens au lieu de flotter
-                       au-dessus comme une pastille sans rapport. */ ''}
                   ${ouvert && !replie ? 'rounded-t-2xl rounded-b-none border-b-transparent' : 'rounded-2xl'}
                   ${aUnActif
                     ? 'border-maboko-accent/25 bg-white/[0.07] text-white'

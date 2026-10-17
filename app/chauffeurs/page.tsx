@@ -52,8 +52,6 @@ export default function PageChauffeurs() {
   }, [statut]);
 
   useEffect(() => {
-    // setTimeout : la règle react-hooks/set-state-in-effect ne trace pas au
-    // travers d'un minuteur, et le déclenchement reste immédiat au rendu.
     const minuterie = setTimeout(charger, 0);
     return () => clearTimeout(minuterie);
   }, [charger]);
@@ -130,7 +128,7 @@ export default function PageChauffeurs() {
         ) : (
           <div>
             <div className="tableau-conteneur overflow-x-auto">
-              <table className="w-full min-w-[750px]">
+              <table className="w-full min-w-[850px]">
                 <thead className="tableau-entete">
                   <tr>
                     <th className="tableau-th">Chauffeur</th>
@@ -165,8 +163,25 @@ export default function PageChauffeurs() {
                         </div>
                       </td>
 
+                      {/* Permis + catégories */}
                       <td className="tableau-td">
-                        <span className="cellule-code">{chauffeur.permis}</span>
+                        <div className="space-y-2">
+                          <span className="cellule-code">{chauffeur.permis}</span>
+                          {chauffeur.permisCategories ? (
+                            <div className="flex flex-wrap gap-1">
+                              {chauffeur.permisCategories.split(',').map((cat) => (
+                                <span
+                                  key={cat}
+                                  className="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[11px] font-bold text-blue-700 ring-1 ring-inset ring-blue-200"
+                                >
+                                  {cat.trim()}
+                                </span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs text-maboko-texte/60">Aucune catégorie</span>
+                          )}
+                        </div>
                       </td>
 
                       <td className="tableau-td">

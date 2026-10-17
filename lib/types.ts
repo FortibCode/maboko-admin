@@ -60,6 +60,7 @@ export type ChauffeurAdmin = {
   vehicule: string;
   plaque: string;
   permis: string;
+  permisCategories: string | null;
   statutValidation: 'en_attente' | 'valide' | 'rejete';
   compteSuspendu: boolean;
   enLigne: boolean;
@@ -116,4 +117,46 @@ export type Finances = {
     part: number;
   }[];
   echecs: { nombre: number; montant: number };
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// MUSÉE DU SAVOIR-FAIRE
+// ═══════════════════════════════════════════════════════════════════════
+
+/** Une entrée validée du musée du savoir-faire. */
+export type MuseeArtisan = {
+  id: number;
+  artisanId: number;
+  nomComplet: string;
+  avatarUrl: string | null;
+  ville: string | null;
+  quartier: string | null;
+  specialite: string | null;
+  bio: string | null;
+  zoneIntervention: string | null;
+  noteMoyenne: number;
+  nbMissionsTerminees: number;
+  metiers: { nom: string; slug: string }[];
+  ordre: number;
+  valideAt: string | null;
+};
+
+/** Candidat proposé au musée, en attente de validation admin. */
+export type MuseeCandidat = {
+  id: number;
+  artisanId: number;
+  nomComplet: string;
+  avatarUrl: string | null;
+  ville: string | null;
+  quartier: string | null;
+  specialite: string | null;
+  noteMoyenne: number;
+  nbMissionsTerminees: number;
+  statut: 'candidat' | 'ignore' | 'banni';
+};
+
+/** Réponse de l'API admin pour la page musée. */
+export type MuseeAdminResponse = {
+  aProposer: MuseeCandidat[];
+  valides: MuseeArtisan[];
 };
