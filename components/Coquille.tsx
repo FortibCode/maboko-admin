@@ -102,6 +102,8 @@ export function Coquille({
   }, [menuCompte]);
 
   useEffect(() => {
+    // L'intergiciel a deja tranche avant le rendu ; ce test ne sert plus que
+    // de filet si le jeton disparait pendant la session.
     if (!lireJeton()) {
       router.replace('/connexion');
       return;
@@ -112,9 +114,24 @@ export function Coquille({
     const minuterie = setTimeout(() => setPret(true), 0);
 
     const deconnecterSiRejete = (erreur: unknown) => {
-      if (erreur instanceof ApiError) {
-        if (erreur.estNonAutorise || erreur.estInterdit) router.replace('/connexion');
-        if (erreur.statut === 0) setEnLigne(false);
+      if (!(erreur instanceof ApiError)) return;
+
+      if (erreur.statut === 0) {
+        setEnLigne(false);
+        return;
+      }
+
+      // Sans motif, l'utilisateur se retrouvait sur l'ecran de connexion sans
+      // rien comprendre : le compte a-t-il ete refuse, la session a-t-elle
+      // expire ? La raison voyage jusqu'a l'ecran de connexion.
+      if (erreur.estNonAutorise || erreur.estInterdit) {
+        effacerJeton();
+
+        const motif = erreur.estInterdit
+          ? 'droits'
+          : 'session';
+
+        router.replace(`/connexion?motif=${motif}`);
       }
     };
 
