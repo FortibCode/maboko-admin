@@ -32,7 +32,6 @@ export default function PageArtisans() {
   const [enCours, setEnCours] = useState<number>();
   const [page, setPage] = useState(1);
 
-  /* États des modales */
   const [modalValidation, setModalValidation] = useState<{
     ouvert: boolean;
     artisan?: ArtisanAdmin;
@@ -41,6 +40,11 @@ export default function PageArtisans() {
   }>({ ouvert: false });
 
   const [modalSuspension, setModalSuspension] = useState<{
+    ouvert: boolean;
+    artisan?: ArtisanAdmin;
+  }>({ ouvert: false });
+
+  const [modalSuppression, setModalSuppression] = useState<{
     ouvert: boolean;
     artisan?: ArtisanAdmin;
   }>({ ouvert: false });
@@ -71,7 +75,6 @@ export default function PageArtisans() {
     return () => clearTimeout(minuterie);
   }, [charger, recherche]);
 
-  /* ── Valider / Refuser ── */
   const confirmerValidation = async () => {
     const { artisan, decision, motif } = modalValidation;
     if (!artisan || !decision) return;
@@ -86,7 +89,7 @@ export default function PageArtisans() {
         titre: decision === 'valide' ? 'Artisan validé' : 'Artisan refusé',
         message:
           decision === 'valide'
-            ? `Le profil de ${artisan.nomComplet} a été validé. Il peut maintenant accéder à la plateforme.`
+            ? `Le profil de ${artisan.nomComplet} a été validé.`
             : `Le profil de ${artisan.nomComplet} a été refusé.${motif ? ` Motif : ${motif}` : ''}`,
       });
     } catch (e) {
@@ -96,7 +99,6 @@ export default function PageArtisans() {
     }
   };
 
-  /* ── Suspendre / Réactiver ── */
   const confirmerSuspension = async () => {
     const { artisan } = modalSuspension;
     if (!artisan) return;
@@ -121,6 +123,27 @@ export default function PageArtisans() {
     }
   };
 
+  const confirmerSuppression = async () => {
+    const { artisan } = modalSuppression;
+    if (!artisan) return;
+    setModalSuppression({ ouvert: false });
+    setEnCours(artisan.id);
+    try {
+      await api.delete(`/admin/utilisateurs/${artisan.utilisateurId}`);
+      await charger();
+      setAlerte({
+        ouvert: true,
+        type: 'succes',
+        titre: 'Compte supprimé',
+        message: `Le compte de ${artisan.nomComplet} et sa fiche artisan ont été supprimés définitivement.`,
+      });
+    } catch (e) {
+      setAlerte({ ouvert: true, type: 'danger', titre: 'Suppression impossible', message: e instanceof ApiError ? e.message : 'Une erreur est survenue.' });
+    } finally {
+      setEnCours(undefined);
+    }
+  };
+
   const listePaginee = artisans ? paginer(artisans, page, PAR_PAGE) : [];
   const enAttente = artisans?.filter((a) => a.statutValidation === 'en_attente').length ?? 0;
 
@@ -137,7 +160,6 @@ export default function PageArtisans() {
           ) : undefined
         }
       >
-        {/* Filtres */}
         <BarreOutils>
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-maboko-texte">
@@ -183,8 +205,7 @@ export default function PageArtisans() {
                 </thead>
                 <tbody>
                   {listePaginee.map((artisan) => (
-                    <tr key={artisan.id} className="tableau-tr">
-                      {/* Artisan */}
+                    <tr key={artisan.id ?? artisan.utilisateurId} className="tableau-tr">
                       <td className="tableau-td">
                         <div className="flex items-center gap-3.5">
                           <div className="avatar h-11 w-11 text-[13px]">
@@ -198,7 +219,6 @@ export default function PageArtisans() {
                         </div>
                       </td>
 
-                      {/* Métier */}
                       <td className="tableau-td">
                         <p className="cellule-titre">{artisan.metiers?.join(', ') || artisan.specialite}</p>
                         {artisan.badges && artisan.badges.length > 0 && (
@@ -206,7 +226,6 @@ export default function PageArtisans() {
                         )}
                       </td>
 
-                      {/* Statut */}
                       <td className="tableau-td">
                         <div className="flex flex-col items-start gap-1.5">
                           <span className={STATUT_CLASSES[artisan.statutValidation] ?? 'pastille-neutre'}>
@@ -218,7 +237,6 @@ export default function PageArtisans() {
                         </div>
                       </td>
 
-                      {/* Activité */}
                       <td className="tableau-td">
                         <div className="space-y-1">
                           <p className="cellule-titre tabular-nums">
@@ -233,17 +251,14 @@ export default function PageArtisans() {
                         </div>
                       </td>
 
-                      {/* Formule */}
                       <td className="tableau-td">
                         <span className="pastille-neutre">{artisan.plan || '—'}</span>
                       </td>
 
-                      {/* Actions */}
                       <td className="tableau-td">
                         <div className="flex items-center justify-end gap-2">
-                          {artisan.statutValidation === 'en_attente' && (
+                          {artisan.statutValidation === 'en_attente' && artisan.id && (
                             <>
-                              {/* Valider */}
                               <button
                                 type="button"
                                 title="Valider l'artisan"
@@ -256,7 +271,6 @@ export default function PageArtisans() {
                                 </svg>
                               </button>
 
-                              {/* Refuser */}
                               <button
                                 type="button"
                                 title="Refuser l'artisan"
@@ -271,7 +285,6 @@ export default function PageArtisans() {
                             </>
                           )}
 
-                          {/* Suspendre / Réactiver */}
                           {artisan.compteSuspendu ? (
                             <button
                               type="button"
@@ -297,6 +310,22 @@ export default function PageArtisans() {
                               </svg>
                             </button>
                           )}
+
+                          {/* 🗑️ Supprimer définitivement */}
+                          <button
+                            type="button"
+                            title="Supprimer définitivement ce compte"
+                            disabled={enCours === artisan.id}
+                            onClick={() => setModalSuppression({ ouvert: true, artisan })}
+                            className="bouton-icon-danger"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6" /><path d="M14 11v6" />
+                              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -310,7 +339,6 @@ export default function PageArtisans() {
         )}
       </Coquille>
 
-      {/* ── Modal validation ── */}
       <Modal
         ouvert={modalValidation.ouvert}
         type={modalValidation.decision === 'valide' ? 'succes' : 'danger'}
@@ -325,7 +353,6 @@ export default function PageArtisans() {
         onAnnuler={() => setModalValidation({ ouvert: false })}
       />
 
-      {/* ── Modal suspension ── */}
       <Modal
         ouvert={modalSuspension.ouvert}
         type={modalSuspension.artisan?.compteSuspendu ? 'succes' : 'danger'}
@@ -340,7 +367,17 @@ export default function PageArtisans() {
         onAnnuler={() => setModalSuspension({ ouvert: false })}
       />
 
-      {/* Alerte résultat */}
+      {/* ⚠️ Modal suppression définitive */}
+      <Modal
+        ouvert={modalSuppression.ouvert}
+        type="danger"
+        titre="Supprimer définitivement ce compte ?"
+        message={`Le compte de ${modalSuppression.artisan?.nomComplet} sera définitivement supprimé, avec sa fiche artisan, ses avis, ses demandes et son historique. Cette action est IRRÉVERSIBLE.`}
+        libelleBoutonOk="Supprimer définitivement"
+        onConfirmer={confirmerSuppression}
+        onAnnuler={() => setModalSuppression({ ouvert: false })}
+      />
+
       <Alerte
         ouvert={alerte.ouvert}
         type={alerte.type}

@@ -99,7 +99,18 @@ async function requete<T>(
 export const api = {
   get: <T>(chemin: string, parametres?: Record<string, string | undefined>) =>
     requete<T>(chemin, { parametres }),
-  post: <T>(chemin: string, corps?: unknown) => requete<T>(chemin, { methode: 'POST', corps }),
+
+  post: <T>(chemin: string, corps?: unknown) =>
+    requete<T>(chemin, { methode: 'POST', corps }),
+
+  patch: <T>(chemin: string, corps?: unknown) =>
+    requete<T>(chemin, { methode: 'PATCH', corps }),
+
+  put: <T>(chemin: string, corps?: unknown) =>
+    requete<T>(chemin, { methode: 'PUT', corps }),
+
+  delete: <T = void>(chemin: string) =>
+    requete<T>(chemin, { methode: 'DELETE' }),
 
   /** Ouvre un téléchargement authentifié (export CSV). */
   telecharger: async (chemin: string, parametres?: Record<string, string | undefined>) => {

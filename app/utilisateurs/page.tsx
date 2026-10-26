@@ -54,11 +54,10 @@ export default function PageUtilisateurs() {
   const [erreur, setErreur] = useState<string>();
   const [page, setPage] = useState(1);
 
-  /* Modal de confirmation suspension */
   const [modalSuspension, setModalSuspension] = useState<{ ouvert: boolean; utilisateur?: UserAdminItem }>({ ouvert: false });
+  const [modalSuppression, setModalSuppression] = useState<{ ouvert: boolean; utilisateur?: UserAdminItem }>({ ouvert: false });
   const [enCours, setEnCours] = useState<number>();
 
-  /* Alerte résultat */
   const [alerte, setAlerte] = useState<{ ouvert: boolean; type?: 'succes' | 'danger'; titre: string; message: string }>({
     ouvert: false,
     titre: '',
@@ -85,7 +84,6 @@ export default function PageUtilisateurs() {
     return () => clearTimeout(minuterie);
   }, [charger, recherche]);
 
-  /* ── Actions ── */
   const ouvrirModalSuspension = (u: UserAdminItem) => {
     setModalSuspension({ ouvert: true, utilisateur: u });
   };
@@ -93,7 +91,6 @@ export default function PageUtilisateurs() {
   const confirmerSuspension = async () => {
     const u = modalSuspension.utilisateur;
     if (!u) return;
-
     const suspendre = !u.compteSuspendu;
     setModalSuspension({ ouvert: false });
     setEnCours(u.id);
@@ -121,7 +118,33 @@ export default function PageUtilisateurs() {
     }
   };
 
-  /* ── Données paginées ── */
+  const confirmerSuppression = async () => {
+    const u = modalSuppression.utilisateur;
+    if (!u) return;
+    setModalSuppression({ ouvert: false });
+    setEnCours(u.id);
+
+    try {
+      await api.delete(`/admin/utilisateurs/${u.id}`);
+      await charger();
+      setAlerte({
+        ouvert: true,
+        type: 'succes',
+        titre: 'Compte supprimé',
+        message: `Le compte de ${u.nomComplet} a été supprimé définitivement.`,
+      });
+    } catch (e) {
+      setAlerte({
+        ouvert: true,
+        type: 'danger',
+        titre: 'Suppression impossible',
+        message: e instanceof ApiError ? e.message : 'Une erreur est survenue.',
+      });
+    } finally {
+      setEnCours(undefined);
+    }
+  };
+
   const listePaginee = utilisateurs ? paginer(utilisateurs, page, PAR_PAGE) : [];
 
   return (
@@ -137,7 +160,6 @@ export default function PageUtilisateurs() {
           )
         }
       >
-        {/* ── Filtres ── */}
         <BarreOutils>
           <div className="relative flex-1 min-w-[200px] max-w-sm">
             <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-maboko-texte">
@@ -176,7 +198,6 @@ export default function PageUtilisateurs() {
           </button>
         </BarreOutils>
 
-        {/* ── Contenu ── */}
         {erreur ? (
           <EtatErreur message={erreur} onReessayer={charger} />
         ) : !utilisateurs ? (
@@ -201,7 +222,6 @@ export default function PageUtilisateurs() {
                 <tbody>
                   {listePaginee.map((u) => (
                     <tr key={u.id} className="tableau-tr">
-                      {/* Utilisateur */}
                       <td className="tableau-td">
                         <div className="flex items-center gap-3.5">
                           <div className="avatar h-11 w-11 text-[13px]" title={u.nomComplet}>
@@ -215,14 +235,12 @@ export default function PageUtilisateurs() {
                         </div>
                       </td>
 
-                      {/* Rôle */}
                       <td className="tableau-td">
                         <span className={COULEURS_ROLE[u.role] ?? 'pastille-neutre'}>
                           {LIBELLES_ROLE[u.role] ?? u.role}
                         </span>
                       </td>
 
-                      {/* Localisation */}
                       <td className="tableau-td">
                         {u.ville ? (
                           <span className="cellule-sous">
@@ -234,31 +252,25 @@ export default function PageUtilisateurs() {
                         )}
                       </td>
 
-                      {/* Statut */}
                       <td className="tableau-td">
                         <div className="flex flex-col items-start gap-1.5">
                           <span className={u.compteSuspendu ? 'pastille-suspendu' : 'pastille-actif'}>
                             {u.compteSuspendu ? 'Suspendu' : 'Actif'}
                           </span>
                           {u.isVerified && (
-                            <span className="pastille-info">
-                              Vérifié
-                            </span>
+                            <span className="pastille-info">Vérifié</span>
                           )}
                         </div>
                       </td>
 
-                      {/* Dernière connexion */}
                       <td className="tableau-td cellule-sous tabular-nums">
                         {u.derniereConnexion ? date(u.derniereConnexion, true) : <span className="text-maboko-bordure">Jamais</span>}
                       </td>
 
-                      {/* Inscription */}
                       <td className="tableau-td cellule-sous tabular-nums">
                         {date(u.createdAt)}
                       </td>
 
-                      {/* Actions */}
                       <td className="tableau-td">
                         <div className="flex items-center justify-end gap-2">
                           {u.role !== 'admin' && u.role !== 'super_admin' && (
@@ -288,6 +300,22 @@ export default function PageUtilisateurs() {
                                   </svg>
                                 </button>
                               )}
+
+                              {/* 🗑️ Supprimer définitivement */}
+                              <button
+                                type="button"
+                                title="Supprimer définitivement"
+                                disabled={enCours === u.id}
+                                onClick={() => setModalSuppression({ ouvert: true, utilisateur: u })}
+                                className="bouton-icon-danger"
+                              >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                  <polyline points="3 6 5 6 21 6" />
+                                  <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                                  <path d="M10 11v6" /><path d="M14 11v6" />
+                                  <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                                </svg>
+                              </button>
                             </>
                           )}
                         </div>
@@ -298,7 +326,6 @@ export default function PageUtilisateurs() {
               </table>
             </div>
 
-            {/* Pagination */}
             <Pagination
               page={page}
               total={utilisateurs.length}
@@ -309,23 +336,28 @@ export default function PageUtilisateurs() {
         )}
       </Coquille>
 
-      {/* ── Modales ── */}
       <Modal
         ouvert={modalSuspension.ouvert}
         type={modalSuspension.utilisateur?.compteSuspendu ? 'succes' : 'danger'}
-        titre={
-          modalSuspension.utilisateur?.compteSuspendu
-            ? 'Réactiver ce compte ?'
-            : 'Suspendre ce compte ?'
-        }
+        titre={modalSuspension.utilisateur?.compteSuspendu ? 'Réactiver ce compte ?' : 'Suspendre ce compte ?'}
         message={
           modalSuspension.utilisateur?.compteSuspendu
-            ? `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera réactivé et l'utilisateur pourra se reconnecter.`
-            : `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera suspendu. Toutes ses sessions actives seront révoquées immédiatement.`
+            ? `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera réactivé.`
+            : `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera suspendu.`
         }
         libelleBoutonOk={modalSuspension.utilisateur?.compteSuspendu ? 'Réactiver' : 'Suspendre'}
         onConfirmer={confirmerSuspension}
         onAnnuler={() => setModalSuspension({ ouvert: false })}
+      />
+
+      <Modal
+        ouvert={modalSuppression.ouvert}
+        type="danger"
+        titre="Supprimer définitivement ce compte ?"
+        message={`Le compte de ${modalSuppression.utilisateur?.nomComplet} sera définitivement supprimé. Cette action est IRRÉVERSIBLE.`}
+        libelleBoutonOk="Supprimer définitivement"
+        onConfirmer={confirmerSuppression}
+        onAnnuler={() => setModalSuppression({ ouvert: false })}
       />
 
       <Alerte

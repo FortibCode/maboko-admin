@@ -31,6 +31,11 @@ export default function PageChauffeurs() {
     chauffeur?: ChauffeurAdmin;
   }>({ ouvert: false });
 
+  const [modalSuppression, setModalSuppression] = useState<{
+    ouvert: boolean;
+    chauffeur?: ChauffeurAdmin;
+  }>({ ouvert: false });
+
   const [alerte, setAlerte] = useState<{
     ouvert: boolean;
     type?: 'succes' | 'danger';
@@ -100,6 +105,27 @@ export default function PageChauffeurs() {
     }
   };
 
+  const confirmerSuppression = async () => {
+    const { chauffeur } = modalSuppression;
+    if (!chauffeur) return;
+    setModalSuppression({ ouvert: false });
+    setEnCours(chauffeur.id);
+    try {
+      await api.delete(`/admin/utilisateurs/${chauffeur.utilisateurId}`);
+      await charger();
+      setAlerte({
+        ouvert: true,
+        type: 'succes',
+        titre: 'Compte supprimé',
+        message: `Le compte de ${chauffeur.nomComplet} et sa fiche chauffeur ont été supprimés définitivement.`,
+      });
+    } catch (e) {
+      setAlerte({ ouvert: true, type: 'danger', titre: 'Suppression impossible', message: e instanceof ApiError ? e.message : 'Une erreur est survenue.' });
+    } finally {
+      setEnCours(undefined);
+    }
+  };
+
   const listePaginee = chauffeurs ? paginer(chauffeurs, page, PAR_PAGE) : [];
   const enAttente = chauffeurs?.filter((c) => c.statutValidation === 'en_attente').length ?? 0;
 
@@ -163,7 +189,6 @@ export default function PageChauffeurs() {
                         </div>
                       </td>
 
-                      {/* Permis + catégories */}
                       <td className="tableau-td">
                         <div className="space-y-2">
                           <span className="cellule-code">{chauffeur.permis}</span>
@@ -254,6 +279,20 @@ export default function PageChauffeurs() {
                               </svg>
                             </button>
                           )}
+                          <button
+                            type="button"
+                            title="Supprimer définitivement"
+                            disabled={enCours === chauffeur.id}
+                            onClick={() => setModalSuppression({ ouvert: true, chauffeur })}
+                            className="bouton-icon-danger"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+                              <path d="M10 11v6" /><path d="M14 11v6" />
+                              <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                            </svg>
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -288,6 +327,16 @@ export default function PageChauffeurs() {
         libelleBoutonOk={modalSuspension.chauffeur?.compteSuspendu ? 'Réactiver' : 'Suspendre'}
         onConfirmer={confirmerSuspension}
         onAnnuler={() => setModalSuspension({ ouvert: false })}
+      />
+
+      <Modal
+        ouvert={modalSuppression.ouvert}
+        type="danger"
+        titre="Supprimer définitivement ce compte ?"
+        message={`Le compte de ${modalSuppression.chauffeur?.nomComplet} sera définitivement supprimé, avec sa fiche chauffeur et son historique. Cette action est IRRÉVERSIBLE.`}
+        libelleBoutonOk="Supprimer définitivement"
+        onConfirmer={confirmerSuppression}
+        onAnnuler={() => setModalSuppression({ ouvert: false })}
       />
 
       <Alerte
