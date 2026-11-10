@@ -7,12 +7,12 @@
  */
 
 /** Adresse visée quand rien n'est configuré. */
-const API_PAR_DEFAUT = 'https://maboko-api-4y2h.onrender.com';
+const API_PAR_DEFAUT = 'https://maboko-api.onrender.com';
 
 /**
  * Adresse de l'API.
  *
- * `https://maboko-api-4y2h.onrender.com` est l'adresse du serveur ; les routes,
+ * `https://maboko-api.onrender.com` est l'adresse du serveur ; les routes,
  * elles, vivent sous `/api/v1` — le préfixe déclaré dans bootstrap/app.php et
  * routes/api.php du backend. Donner l'une pour l'autre produit un 404 sur
  * chaque appel ; le préfixe est donc ajouté ici quand il manque.
