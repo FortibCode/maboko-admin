@@ -22,6 +22,8 @@ export interface UserAdminItem {
   role: 'client' | 'artisan' | 'chauffeur' | 'admin' | 'super_admin';
   statut: 'actif' | 'suspendu';
   compteSuspendu: boolean;
+  /** Multi-comptes artisan : renseigné pour un profil rattaché à un compte principal. */
+  comptePrincipalId?: number | null;
   isVerified: boolean;
   avatarUrl?: string;
   ville?: string;
@@ -229,6 +231,11 @@ export default function PageUtilisateurs() {
                           </div>
                           <div className="min-w-0 space-y-1">
                             <p className="cellule-titre truncate">{u.nomComplet}</p>
+                            {u.comptePrincipalId && (
+                              <p className="cellule-sous truncate">
+                                Profil rattaché au compte n° {u.comptePrincipalId}
+                              </p>
+                            )}
                             <p className="cellule-sous truncate">{u.email}</p>
                             <p className="cellule-code">{u.telephone}</p>
                           </div>
@@ -343,7 +350,9 @@ export default function PageUtilisateurs() {
         message={
           modalSuspension.utilisateur?.compteSuspendu
             ? `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera réactivé.`
-            : `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera suspendu.`
+            : modalSuspension.utilisateur?.role === 'artisan' && !modalSuspension.utilisateur?.comptePrincipalId
+              ? `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera suspendu, et avec lui l'accès à ses profils rattachés.`
+              : `Le compte de ${modalSuspension.utilisateur?.nomComplet} sera suspendu.`
         }
         libelleBoutonOk={modalSuspension.utilisateur?.compteSuspendu ? 'Réactiver' : 'Suspendre'}
         onConfirmer={confirmerSuspension}
@@ -354,7 +363,11 @@ export default function PageUtilisateurs() {
         ouvert={modalSuppression.ouvert}
         type="danger"
         titre="Supprimer définitivement ce compte ?"
-        message={`Le compte de ${modalSuppression.utilisateur?.nomComplet} sera définitivement supprimé. Cette action est IRRÉVERSIBLE.`}
+        message={
+          modalSuppression.utilisateur?.role === 'artisan' && !modalSuppression.utilisateur?.comptePrincipalId
+            ? `Le compte de ${modalSuppression.utilisateur?.nomComplet} sera définitivement supprimé, ainsi que ses profils rattachés. Cette action est IRRÉVERSIBLE.`
+            : `Le compte de ${modalSuppression.utilisateur?.nomComplet} sera définitivement supprimé. Cette action est IRRÉVERSIBLE.`
+        }
         libelleBoutonOk="Supprimer définitivement"
         onConfirmer={confirmerSuppression}
         onAnnuler={() => setModalSuppression({ ouvert: false })}
