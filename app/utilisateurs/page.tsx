@@ -24,6 +24,8 @@ export interface UserAdminItem {
   compteSuspendu: boolean;
   /** Multi-comptes artisan : renseigné pour un profil rattaché à un compte principal. */
   comptePrincipalId?: number | null;
+  /** Profil retiré par son titulaire : données conservées, hors recherche. */
+  archive?: boolean;
   isVerified: boolean;
   avatarUrl?: string;
   ville?: string;
@@ -234,6 +236,7 @@ export default function PageUtilisateurs() {
                             {u.comptePrincipalId && (
                               <p className="cellule-sous truncate">
                                 Profil rattaché au compte n° {u.comptePrincipalId}
+                                {u.archive ? ' · archivé par son titulaire' : ''}
                               </p>
                             )}
                             <p className="cellule-sous truncate">{u.email}</p>
